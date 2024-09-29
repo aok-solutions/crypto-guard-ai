@@ -1,6 +1,5 @@
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { ShieldHalf } from "lucide-react"
+import { Analyze } from "@/components/Analyze"
 
 export default function Home() {
   return (
@@ -16,10 +15,7 @@ export default function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="w-full max-w-sm space-y-2">
-                <form className="flex space-x-2">
-                  <Input className="flex-1" placeholder="Enter a blockchain address" type="text" />
-                  <Button type="submit">Analyze</Button>
-                </form>
+                <Analyze />
               </div>
             </div>
           </div>
