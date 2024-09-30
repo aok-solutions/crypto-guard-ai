@@ -1,34 +1,16 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { ShieldHalf, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { ShieldHalf } from "lucide-react"
 
 import { useState } from "react"
 import { Else, If, Then } from "react-if"
 import axios, { AxiosResponse } from "axios"
 import OpenAI from "openai"
-import { BlockchainAddress, BlockInput, BlockTransaction, Transaction } from "@/types/blockchain"
-import { formatBTC, formatTimestamp } from "@/lib/utils"
+import { BlockchainAddress, BlockTransaction } from "@/types/blockchain"
+import { BlockTransactionCard } from "@/components/BlockTransactionCard"
 
-const blockchainInfo = axios.create({
-  baseURL: "https://blockchain.info",
-})
-
+const blockchainInfo = axios.create({ baseURL: "https://blockchain.info" })
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true,
@@ -120,70 +102,7 @@ export default function Home() {
             <section>
               <h3 className="text-2xl font-semibold tracking-tight mb-4">Transactions</h3>
               {blockchainAddressData.txs.map((txn: BlockTransaction) => (
-                <Card key={txn.block_height} className="mb-4">
-                  <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                      <span>Block {txn.block_height}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong>Hash: </strong>
-                      {txn.hash}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong>Timestamp: </strong> {formatTimestamp(txn.time)}
-                    </p>
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="transactions">
-                        <AccordionTrigger>
-                          Transactions ({txn.inputs.length + txn.out.length})
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Transaction ID</TableHead>
-                                <TableHead>Address</TableHead>
-                                <TableHead>Amount</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {txn.inputs.map((tx: BlockInput) => {
-                                const transaction: Transaction = tx.prev_out
-                                return (
-                                  <TableRow key={transaction.tx_index}>
-                                    <TableCell>
-                                      <ArrowDownRight className="text-green-500" />
-                                    </TableCell>
-                                    <TableCell className="font-mono">
-                                      {transaction.tx_index}
-                                    </TableCell>
-                                    <TableCell className="font-mono">{transaction.addr}</TableCell>
-                                    <TableCell className="font-mono">
-                                      {formatBTC(transaction.value)}
-                                    </TableCell>
-                                  </TableRow>
-                                )
-                              })}
-                              {txn.out.map((tx: Transaction) => (
-                                <TableRow key={tx.tx_index}>
-                                  <TableCell>
-                                    <ArrowUpRight className="text-red-500" />
-                                  </TableCell>
-                                  <TableCell className="font-mono">{tx.tx_index}</TableCell>
-                                  <TableCell className="font-mono">{tx.addr}</TableCell>
-                                  <TableCell className="font-mono">{formatBTC(tx.value)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </CardContent>
-                </Card>
+                <BlockTransactionCard txn={txn} key={txn.block_height} />
               ))}
             </section>
           </>
