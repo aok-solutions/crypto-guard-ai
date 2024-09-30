@@ -103,14 +103,14 @@ export default function Home() {
       {displayAddress.length > 0 && (
         <div className="flex-1 p-6">
           <h1 className="font-bold text-muted-foreground">Blockchain Address </h1>
-          <h1 className="font-bold text-3xl">{displayAddress}</h1>
+          <h1 className="font-extrabold tracking-tight text-3xl">{displayAddress}</h1>
         </div>
       )}
       <main className="flex-1 p-4 md:p-6 grid gap-6 md:grid-cols-2">
         {blockchainAddressData && analysis.length > 0 && (
           <>
             <section>
-              <h3 className="text-2xl font-bold mb-4">Fraud Analysis</h3>
+              <h3 className="text-2xl font-semibold tracking-tight mb-4">Fraud Analysis</h3>
               <div className="grid gap-4">
                 <div className="rounded-md bg-black p-6">
                   <code className="grid gap-1 text-sm text-white [&_span]:h-4">{analysis}</code>
@@ -118,7 +118,7 @@ export default function Home() {
               </div>
             </section>
             <section>
-              <h3 className="text-2xl font-bold mb-4">Transactions</h3>
+              <h3 className="text-2xl font-semibold tracking-tight mb-4">Transactions</h3>
               {blockchainAddressData &&
                 blockchainAddressData.txs.map((txn: BlockTransaction) => (
                   <Card key={txn.block_height} className="mb-4">
