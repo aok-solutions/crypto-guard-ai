@@ -13,14 +13,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { ShieldHalf, ArrowUpRight, ArrowDownRight } from "lucide-react"
-import axios from "axios"
-import OpenAI from "openai"
-import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Else, If, Then, When } from "react-if"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { ShieldHalf, ArrowUpRight, ArrowDownRight } from "lucide-react"
+
+import { useState } from "react"
+import { Else, If, Then, When } from "react-if"
+import axios, { AxiosResponse } from "axios"
+import OpenAI from "openai"
+import { BlockchainAddress, BlockInput, BlockTransaction, Transaction } from "@/types/blockchain"
 
 const blockchainInfo = axios.create({
   baseURL: "https://blockchain.info",
@@ -43,15 +45,15 @@ const getOpenAIResponse = async (prompt: string): Promise<OpenAI.Chat.ChatComple
   })
 }
 
-const getBlockchainData = async (address: string) => {
-  const response = await blockchainInfo.get(`/rawaddr/${address}?cors=true`)
+const getBlockchainData = async (address: string): Promise<BlockchainAddress> => {
+  const response: AxiosResponse<BlockchainAddress> = await blockchainInfo.get(`/rawaddr/${address}`)
   console.log(response.data)
   return response.data
 }
 
 export default function Home() {
   const [blockchainAddress, setBlockchainAddress] = useState<string>("")
-  const [blockchainAddressData, setBlockchainAddressData] = useState()
+  const [blockchainAddressData, setBlockchainAddressData] = useState<BlockchainAddress>()
   const [analysis, setAnalysis] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -64,7 +66,7 @@ export default function Home() {
     const prompt = `give a list of possible fraud patterns detected in the following blockchain transaction data: ${JSON.stringify(blockchainData)}`
     const aiResponse = await getOpenAIResponse(prompt)
     console.log(aiResponse.choices[0].message.content)
-    setAnalysis(aiResponse.choices[0].message.content)
+    setAnalysis(aiResponse.choices[0].message.content || "")
 
     setBlockchainAddress("")
     setIsLoading(false)
@@ -101,25 +103,25 @@ export default function Home() {
             <section>
               <h2 className="text-2xl font-bold mb-4">Transactions</h2>
               {blockchainAddressData &&
-                blockchainAddressData["txs"].map((txn) => (
-                  <Card key={txn["block_height"]} className="mb-4">
+                blockchainAddressData.txs.map((txn: BlockTransaction) => (
+                  <Card key={txn.block_height} className="mb-4">
                     <CardHeader>
                       <CardTitle className="flex justify-between items-center">
-                        <span>Block {txn["block_height"]}</span>
+                        <span>Block {txn.block_height}</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-gray-600 mb-2">
                         <strong>Hash: </strong>
-                        {txn["hash"]}
+                        {txn.hash}
                       </p>
                       <p className="text-sm text-gray-600 mb-2">
-                        <strong>Timestamp: </strong> {txn["time"]}
+                        <strong>Timestamp: </strong> {txn.time}
                       </p>
                       <Accordion type="single" collapsible>
                         <AccordionItem value="transactions">
                           <AccordionTrigger>
-                            Transactions ({txn["inputs"].length + txn["out"].length})
+                            Transactions ({txn.inputs.length + txn.out.length})
                           </AccordionTrigger>
                           <AccordionContent>
                             <Table>
@@ -132,30 +134,33 @@ export default function Home() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {txn["inputs"].map((tx) => (
-                                  <TableRow key={tx["prev_out"]["tx_index"]}>
-                                    <TableCell>
-                                      <ArrowDownRight className="text-green-500" />
-                                    </TableCell>
-                                    <TableCell className="font-mono">
-                                      {tx["prev_out"]["tx_index"]}
-                                    </TableCell>
-                                    <TableCell className="font-mono">
-                                      {tx["prev_out"]["addr"]}
-                                    </TableCell>
-                                    <TableCell className="font-mono">
-                                      {tx["prev_out"]["value"]}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                                {txn["out"].map((tx) => (
-                                  <TableRow key={tx["tx_index"]}>
+                                {txn.inputs.map((tx: BlockInput) => {
+                                  const transaction: Transaction = tx.prev_out
+                                  return (
+                                    <TableRow key={transaction.tx_index}>
+                                      <TableCell>
+                                        <ArrowDownRight className="text-green-500" />
+                                      </TableCell>
+                                      <TableCell className="font-mono">
+                                        {transaction.tx_index}
+                                      </TableCell>
+                                      <TableCell className="font-mono">
+                                        {transaction.addr}
+                                      </TableCell>
+                                      <TableCell className="font-mono">
+                                        {transaction.value}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                })}
+                                {txn.out.map((tx: Transaction) => (
+                                  <TableRow key={tx.tx_index}>
                                     <TableCell>
                                       <ArrowUpRight className="text-red-500" />
                                     </TableCell>
-                                    <TableCell className="font-mono">{tx["tx_index"]}</TableCell>
-                                    <TableCell className="font-mono">{tx["addr"]}</TableCell>
-                                    <TableCell className="font-mono">{tx["value"]}</TableCell>
+                                    <TableCell className="font-mono">{tx.tx_index}</TableCell>
+                                    <TableCell className="font-mono">{tx.addr}</TableCell>
+                                    <TableCell className="font-mono">{tx.value}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
