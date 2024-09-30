@@ -19,7 +19,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { ShieldHalf, ArrowUpRight, ArrowDownRight } from "lucide-react"
 
 import { useState } from "react"
-import { Else, If, Then, When } from "react-if"
+import { Else, If, Then } from "react-if"
 import axios, { AxiosResponse } from "axios"
 import OpenAI from "openai"
 import { BlockchainAddress, BlockInput, BlockTransaction, Transaction } from "@/types/blockchain"
@@ -48,7 +48,6 @@ const getOpenAIResponse = async (prompt: string): Promise<OpenAI.Chat.ChatComple
 
 const getBlockchainData = async (address: string): Promise<BlockchainAddress> => {
   const response: AxiosResponse<BlockchainAddress> = await blockchainInfo.get(`/rawaddr/${address}`)
-  console.log(response.data)
   return response.data
 }
 
@@ -67,7 +66,6 @@ export default function Home() {
     setBlockchainAddressData(blockchainData)
     const prompt = `give a list of possible fraud patterns detected in the following blockchain transaction data: ${JSON.stringify(blockchainData)}`
     const aiResponse = await getOpenAIResponse(prompt)
-    console.log(aiResponse.choices[0].message.content)
     setAnalysis(aiResponse.choices[0].message.content || "")
 
     setDisplayAddress(blockchainAddress)
