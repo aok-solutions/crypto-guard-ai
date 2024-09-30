@@ -23,6 +23,7 @@ import { Else, If, Then, When } from "react-if"
 import axios, { AxiosResponse } from "axios"
 import OpenAI from "openai"
 import { BlockchainAddress, BlockInput, BlockTransaction, Transaction } from "@/types/blockchain"
+import { formatBTC, formatTimestamp } from "@/lib/utils"
 
 const blockchainInfo = axios.create({
   baseURL: "https://blockchain.info",
@@ -116,7 +117,7 @@ export default function Home() {
                         {txn.hash}
                       </p>
                       <p className="text-sm text-gray-600 mb-2">
-                        <strong>Timestamp: </strong> {txn.time}
+                        <strong>Timestamp: </strong> {formatTimestamp(txn.time)}
                       </p>
                       <Accordion type="single" collapsible>
                         <AccordionItem value="transactions">
@@ -148,7 +149,7 @@ export default function Home() {
                                         {transaction.addr}
                                       </TableCell>
                                       <TableCell className="font-mono">
-                                        {transaction.value}
+                                        {formatBTC(transaction.value)}
                                       </TableCell>
                                     </TableRow>
                                   )
@@ -160,7 +161,9 @@ export default function Home() {
                                     </TableCell>
                                     <TableCell className="font-mono">{tx.tx_index}</TableCell>
                                     <TableCell className="font-mono">{tx.addr}</TableCell>
-                                    <TableCell className="font-mono">{tx.value}</TableCell>
+                                    <TableCell className="font-mono">
+                                      {formatBTC(tx.value)}
+                                    </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
