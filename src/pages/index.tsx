@@ -9,6 +9,7 @@ import axios, { AxiosResponse } from "axios"
 import OpenAI from "openai"
 import { BlockchainAddress, BlockTransaction } from "@/types/blockchain"
 import { BlockTransactionCard } from "@/components/BlockTransactionCard"
+import { NotFound } from "@/components/NotFound"
 
 const blockchainInfo = axios.create({ baseURL: "https://blockchain.info" })
 const openai = new OpenAI({
@@ -28,9 +29,17 @@ const getOpenAIResponse = async (prompt: string): Promise<OpenAI.Chat.ChatComple
   })
 }
 
-const getBlockchainData = async (address: string): Promise<BlockchainAddress> => {
-  const response: AxiosResponse<BlockchainAddress> = await blockchainInfo.get(`/rawaddr/${address}`)
-  return response.data
+const getBlockchainData = async (address: string): Promise<BlockchainAddress | Error> => {
+  try {
+    const response: AxiosResponse<BlockchainAddress> = await blockchainInfo.get(
+      `/rawaddr/${address}`,
+    )
+    return response.data
+  } catch (error) {
+    const typedError = error as Error
+    console.error(typedError.message)
+    return typedError
+  }
 }
 
 export default function Home() {
@@ -38,21 +47,34 @@ export default function Home() {
   const [displayAddress, setDisplayAddress] = useState<string>("")
   const [blockchainAddressData, setBlockchainAddressData] = useState<BlockchainAddress>()
   const [analysis, setAnalysis] = useState<string>("")
+
   const [isLoading, setIsLoading] = useState(false)
+  const [isNotFound, setIsNotFound] = useState(false)
+
+  const resetForm = () => {
+    setBlockchainAddress("")
+    setIsLoading(false)
+  }
 
   const makeAnalysis = async () => {
     setBlockchainAddressData(undefined)
     setIsLoading(true)
 
     const blockchainData = await getBlockchainData(blockchainAddress)
-    setBlockchainAddressData(blockchainData)
-    const prompt = `give a list of possible fraud patterns detected in the following blockchain transaction data: ${JSON.stringify(blockchainData)}`
-    const aiResponse = await getOpenAIResponse(prompt)
-    setAnalysis(aiResponse.choices[0].message.content || "")
+    if (blockchainData instanceof Error) {
+      setIsNotFound(true)
+      resetForm()
+    } else {
+      setIsNotFound(false)
+      setBlockchainAddressData(blockchainData)
 
-    setDisplayAddress(blockchainAddress)
-    setBlockchainAddress("")
-    setIsLoading(false)
+      const prompt = `give a list of possible fraud patterns detected in the following blockchain transaction data: ${JSON.stringify(blockchainData)}`
+      const aiResponse = await getOpenAIResponse(prompt)
+      setAnalysis(aiResponse.choices[0].message.content || "")
+
+      setDisplayAddress(blockchainAddress)
+      resetForm()
+    }
   }
 
   return (
@@ -80,34 +102,41 @@ export default function Home() {
           </Button>
         </div>
       </header>
-      {displayAddress.length > 0 && (
-        <div className="flex-1 p-6">
-          <h1 className="font-bold text-muted-foreground">Blockchain Address </h1>
-          <h1 className="font-extrabold tracking-tight text-3xl">{displayAddress}</h1>
-        </div>
-      )}
-      <main className="flex-1 p-4 md:p-6 grid gap-6 md:grid-cols-2">
-        {blockchainAddressData && analysis.length > 0 && (
-          <>
-            <section>
-              <h3 className="text-2xl font-semibold tracking-tight mb-4">Fraud Analysis</h3>
-              <div className="grid gap-4">
-                <div className="rounded-md bg-black p-6">
-                  <code className="grid gap-1 text-sm text-white [&_span]:h-4">
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{analysis}</pre>
-                  </code>
-                </div>
-              </div>
-            </section>
-            <section>
-              <h3 className="text-2xl font-semibold tracking-tight mb-4">Transactions</h3>
-              {blockchainAddressData.txs.map((txn: BlockTransaction) => (
-                <BlockTransactionCard txn={txn} key={txn.block_height} />
-              ))}
-            </section>
-          </>
-        )}
-      </main>
+      <If condition={isNotFound}>
+        <Then>
+          <NotFound />
+        </Then>
+        <Else>
+          {displayAddress.length > 0 && (
+            <div className="flex-1 p-6">
+              <h1 className="font-bold text-muted-foreground">Blockchain Address </h1>
+              <h1 className="font-extrabold tracking-tight text-3xl">{displayAddress}</h1>
+            </div>
+          )}
+          <main className="flex-1 p-4 md:p-6 grid gap-6 md:grid-cols-2">
+            {blockchainAddressData && analysis.length > 0 && (
+              <>
+                <section>
+                  <h3 className="text-2xl font-semibold tracking-tight mb-4">Fraud Analysis</h3>
+                  <div className="grid gap-4">
+                    <div className="rounded-md bg-black p-6">
+                      <code className="grid gap-1 text-sm text-white [&_span]:h-4">
+                        <pre style={{ whiteSpace: "pre-wrap" }}>{analysis}</pre>
+                      </code>
+                    </div>
+                  </div>
+                </section>
+                <section>
+                  <h3 className="text-2xl font-semibold tracking-tight mb-4">Transactions</h3>
+                  {blockchainAddressData.txs.map((txn: BlockTransaction) => (
+                    <BlockTransactionCard txn={txn} key={txn.block_height} />
+                  ))}
+                </section>
+              </>
+            )}
+          </main>
+        </Else>
+      </If>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           © 2024 AOK Solutions. All rights reserved.
